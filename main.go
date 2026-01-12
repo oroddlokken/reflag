@@ -75,6 +75,7 @@ func printInit(shell string, filterNames []string) {
 		fmt.Println()
 		for _, name := range names {
 			t := translator.GetByName(name)
+			fmt.Printf("functions -e %s 2>/dev/null\n", t.SourceTool())
 			fmt.Printf("function %s\n", t.SourceTool())
 			fmt.Printf("    eval (reflag %s %s $argv)\n", t.SourceTool(), t.TargetTool())
 			fmt.Println("end")
@@ -85,6 +86,7 @@ func printInit(shell string, filterNames []string) {
 		fmt.Println()
 		for _, name := range names {
 			t := translator.GetByName(name)
+			fmt.Printf("unalias %s 2>/dev/null\n", t.SourceTool())
 			fmt.Printf("%s() {\n", t.SourceTool())
 			fmt.Printf("    eval \"$(reflag %s %s \"$@\")\"\n", t.SourceTool(), t.TargetTool())
 			fmt.Println("}")
