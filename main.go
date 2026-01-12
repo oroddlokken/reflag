@@ -35,12 +35,41 @@ func printVersion(name string) {
 	}
 }
 
+func printInit(shell string) {
+	names := translator.List()
+	sort.Strings(names)
+
+	switch shell {
+	case "fish":
+		fmt.Println("# reflag shell init - add to your ~/.config/fish/config.fish")
+		fmt.Println()
+		for _, name := range names {
+			t := translator.GetByName(name)
+			fmt.Printf("function %s\n", t.SourceTool())
+			fmt.Printf("    eval (reflag %s %s $argv)\n", t.SourceTool(), t.TargetTool())
+			fmt.Println("end")
+			fmt.Println()
+		}
+	default: // bash, zsh
+		fmt.Println("# reflag shell init - add to your ~/.bashrc or ~/.zshrc")
+		fmt.Println()
+		for _, name := range names {
+			t := translator.GetByName(name)
+			fmt.Printf("%s() {\n", t.SourceTool())
+			fmt.Printf("    eval \"$(reflag %s %s \"$@\")\"\n", t.SourceTool(), t.TargetTool())
+			fmt.Println("}")
+			fmt.Println()
+		}
+	}
+}
+
 func printUsage() {
 	fmt.Println("reflag - translate command-line flags between tools")
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  reflag <source> <target> [flags...]")
 	fmt.Println("  reflag --list")
+	fmt.Println("  reflag --init [bash|zsh|fish]")
 	fmt.Println("  reflag --version")
 	fmt.Println()
 	fmt.Println("Symlink mode:")
@@ -123,6 +152,13 @@ func main() {
 		return
 	case "--help", "-h":
 		printUsage()
+		return
+	case "--init":
+		shell := "bash"
+		if len(args) > 1 {
+			shell = args[1]
+		}
+		printInit(shell)
 		return
 	}
 
