@@ -30,12 +30,25 @@ git push origin v1.0.0
 
 Single-file Go application (`main.go`) with these components:
 
-1. **Flag mappings** - Static maps defining ls→eza translations:
+1. **Mode detection** - `getLSMode()` determines BSD vs GNU ls compatibility:
+   - Auto-detects based on OS (darwin/freebsd → BSD, linux/others → GNU)
+   - Override with `LS2EZA_MODE=bsd` or `LS2EZA_MODE=gnu`
+2. **Flag mappings** - Static maps defining ls→eza translations:
    - `reverseNeeded` - Flags that need sort order correction (`t`, `S`, `c`, `u`, `U`)
    - `flagMap` - Short flag translations (30+ flags)
    - `longFlagMap` - Long option translations (`--all`, `--recursive`, etc.)
-2. **`translateFlags()`** - Core logic that parses arguments, applies mappings, handles reverse-sort semantics, and deduplicates flags
-3. **`main()`** - Entry point that outputs the shell-quoted eza command
+   - `longFlagPrefixes` - Long options with =value that need prefix matching
+3. **`translateFlags(mode)`** - Core logic that parses arguments, applies mode-specific mappings, handles reverse-sort semantics, and deduplicates flags
+4. **`main()`** - Entry point that outputs the shell-quoted eza command
+
+### BSD vs GNU conflicts
+
+These flags have different meanings between BSD and GNU ls:
+- `-T`: BSD=full time display, GNU=tab size (ignored)
+- `-X`: BSD=don't cross filesystems (ignored), GNU=sort by extension
+- `-I`: BSD=prevent auto -A (ignored), GNU=ignore pattern
+- `-w`: BSD=raw non-printable (ignored), GNU=output width
+- `-D`: BSD=date format, GNU=dired mode (ignored)
 
 ### Key behavior: Reverse sort handling
 

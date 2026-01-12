@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestTranslateFlags(t *testing.T) {
+func TestTranslateFlagsGNU(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    []string
@@ -145,11 +145,7 @@ func TestTranslateFlags(t *testing.T) {
 			input:    []string{"-@"},
 			expected: []string{"--extended"},
 		},
-		{
-			name:     "full time",
-			input:    []string{"-T"},
-			expected: []string{"--time-style=full-iso"},
-		},
+		// NOTE: -T is BSD-specific (full time), tested in TestTranslateFlagsBSD
 
 		// Display format
 		{
@@ -280,6 +276,79 @@ func TestTranslateFlags(t *testing.T) {
 			expected: []string{"-l", "--no-group", "--no-user"},
 		},
 
+		// -D custom date format
+		// NOTE: -D FORMAT is BSD-specific (date format), tested in TestTranslateFlagsBSD
+		// GNU -D (dired mode) is ignored
+
+		// GNU ls specific flags
+		{
+			name:     "GNU ignore pattern separate",
+			input:    []string{"-I", "*.bak"},
+			expected: []string{"--ignore-glob=*.bak"},
+		},
+		{
+			name:     "GNU ignore pattern attached",
+			input:    []string{"-I*.tmp"},
+			expected: []string{"--ignore-glob=*.tmp"},
+		},
+		{
+			name:     "GNU sort by extension",
+			input:    []string{"-lX"},
+			expected: []string{"-l", "--sort=extension"},
+		},
+		{
+			name:     "GNU width",
+			input:    []string{"-w", "80"},
+			expected: []string{"--width=80"},
+		},
+		{
+			name:     "GNU width attached",
+			input:    []string{"-w120"},
+			expected: []string{"--width=120"},
+		},
+		{
+			name:     "GNU SELinux context",
+			input:    []string{"-lZ"},
+			expected: []string{"-l", "-Z"},
+		},
+		{
+			name:     "GNU literal/no-quotes",
+			input:    []string{"-lN"},
+			expected: []string{"-l", "--no-quotes"},
+		},
+		{
+			name:     "GNU group directories first",
+			input:    []string{"--group-directories-first"},
+			expected: []string{"--group-directories-first"},
+		},
+		{
+			name:     "GNU full-time",
+			input:    []string{"--full-time"},
+			expected: []string{"-l", "--time-style=full-iso"},
+		},
+		{
+			name:     "GNU ignore long option",
+			input:    []string{"--ignore=*.log"},
+			expected: []string{"--ignore-glob=*.log"},
+		},
+		{
+			name:     "GNU hyperlink",
+			input:    []string{"--hyperlink"},
+			expected: []string{"--hyperlink"},
+		},
+
+		// Ignored flags (no eza equivalent)
+		{
+			name:     "ignored flag W",
+			input:    []string{"-lW"},
+			expected: []string{"-l"},
+		},
+		{
+			name:     "ignored flag Q",
+			input:    []string{"-lQ"},
+			expected: []string{"-l"},
+		},
+
 		// Edge cases
 		{
 			name:     "empty input",
@@ -300,9 +369,58 @@ func TestTranslateFlags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := translateFlags(tt.input)
+			result := translateFlags(tt.input, ModeGNU)
 			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("translateFlags(%v) = %v, want %v", tt.input, result, tt.expected)
+				t.Errorf("translateFlags(%v, ModeGNU) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestTranslateFlagsBSD(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []string
+		expected []string
+	}{
+		// BSD-specific flag behaviors
+		{
+			name:     "BSD full time",
+			input:    []string{"-T"},
+			expected: []string{"--time-style=full-iso"},
+		},
+		{
+			name:     "BSD date format separate",
+			input:    []string{"-D", "%Y-%m-%d"},
+			expected: []string{"--time-style=+%Y-%m-%d"},
+		},
+		{
+			name:     "BSD date format attached",
+			input:    []string{"-D%Y-%m-%d"},
+			expected: []string{"--time-style=+%Y-%m-%d"},
+		},
+		{
+			name:     "BSD -I ignored",
+			input:    []string{"-lI"},
+			expected: []string{"-l"},
+		},
+		{
+			name:     "BSD -X ignored",
+			input:    []string{"-lX"},
+			expected: []string{"-l"},
+		},
+		{
+			name:     "BSD -w ignored",
+			input:    []string{"-lw"},
+			expected: []string{"-l"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := translateFlags(tt.input, ModeBSD)
+			if !reflect.DeepEqual(result, tt.expected) {
+				t.Errorf("translateFlags(%v, ModeBSD) = %v, want %v", tt.input, result, tt.expected)
 			}
 		})
 	}
@@ -320,7 +438,7 @@ func TestVersionFlag(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result := translateFlags(tt.input)
+		result := translateFlags(tt.input, ModeGNU)
 		if !reflect.DeepEqual(result, tt.expected) {
 			t.Errorf("translateFlags(%v) = %v, want %v", tt.input, result, tt.expected)
 		}
@@ -349,6 +467,32 @@ func TestShellQuote(t *testing.T) {
 			result := shellQuote(tt.input)
 			if result != tt.expected {
 				t.Errorf("shellQuote(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestGetLSModeEnvOverride(t *testing.T) {
+	// Test environment variable override
+	tests := []struct {
+		name     string
+		envValue string
+		expected LSMode
+	}{
+		{"bsd lowercase", "bsd", ModeBSD},
+		{"BSD uppercase", "BSD", ModeBSD},
+		{"gnu lowercase", "gnu", ModeGNU},
+		{"GNU uppercase", "GNU", ModeGNU},
+		{"mixed case Bsd", "Bsd", ModeBSD},
+		{"mixed case Gnu", "Gnu", ModeGNU},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("LS2EZA_MODE", tt.envValue)
+			result := getLSMode()
+			if result != tt.expected {
+				t.Errorf("getLSMode() with LS2EZA_MODE=%q = %v, want %v", tt.envValue, result, tt.expected)
 			}
 		})
 	}

@@ -53,6 +53,35 @@ function ls
 end
 ```
 
+## BSD vs GNU ls Compatibility
+
+ls2eza supports both BSD ls (macOS, FreeBSD) and GNU ls (Linux) flag conventions. By default, it auto-detects based on your operating system:
+
+- **macOS, FreeBSD, OpenBSD, NetBSD, DragonFly** → BSD mode
+- **Linux, Windows, others** → GNU mode
+
+You can override the detection with the `LS2EZA_MODE` environment variable:
+
+```bash
+# Force BSD mode
+export LS2EZA_MODE=bsd
+
+# Force GNU mode
+export LS2EZA_MODE=gnu
+```
+
+### Conflicting Flags
+
+Some flags have different meanings between BSD and GNU ls:
+
+| Flag | BSD ls | GNU ls |
+|------|--------|--------|
+| `-T` | Full timestamp display | Tab size (ignored) |
+| `-X` | Don't cross filesystems (ignored) | Sort by extension |
+| `-I` | Prevent auto -A for superuser (ignored) | Ignore pattern (`-I PATTERN`) |
+| `-w` | Raw non-printable chars (ignored) | Output width (`-w COLS`) |
+| `-D` | Date format (`-D FORMAT`) | Dired mode (ignored) |
+
 ## Supported Flags
 
 ### Display Format
@@ -98,7 +127,6 @@ end
 | `-g` | `-l --no-user` | Long format without owner |
 | `-O` | `--flags` | Show file flags (BSD/macOS) |
 | `-@` | `--extended` | Show extended attributes |
-| `-T` | `--time-style=full-iso` | Full timestamp display |
 | `-h` | (default) | Human-readable sizes |
 
 ### Indicators
@@ -115,11 +143,36 @@ end
 | `-L` | `-X` | Dereference symlinks |
 | `-H` | `-X` | Follow symlinks on command line |
 
+### BSD-Specific Flags
+
+| ls flag | eza equivalent | Description |
+|---------|----------------|-------------|
+| `-T` | `--time-style=full-iso` | Full timestamp display |
+| `-D FORMAT` | `--time-style=+FORMAT` | Custom date format (strftime) |
+| `-G` | (default) | Color output |
+| `-I` | (ignored) | Prevent auto -A for superuser |
+| `-W` | (ignored) | Display whiteouts |
+| `-X` | (ignored) | Don't cross filesystems |
+| `-w` | (ignored) | Raw non-printable characters |
+
+### GNU-Specific Flags
+
+| ls flag | eza equivalent | Description |
+|---------|----------------|-------------|
+| `-X` | `--sort=extension` | Sort by file extension |
+| `-I PATTERN` | `--ignore-glob=PATTERN` | Ignore files matching pattern |
+| `-w COLS` | `--width=COLS` | Set output width |
+| `-Z` | `-Z` | SELinux security context |
+| `-N` | `--no-quotes` | Print names without quoting |
+| `--group-directories-first` | `--group-directories-first` | List directories first |
+| `--full-time` | `-l --time-style=full-iso` | Long format with full time |
+| `--ignore=PATTERN` | `--ignore-glob=PATTERN` | Ignore files matching pattern |
+| `--hyperlink` | `--hyperlink` | Hyperlink file names |
+
 ### Other
 
 | ls flag | eza equivalent | Description |
 |---------|----------------|-------------|
-| `-G` | (default) | Color output |
 | `-k` | (ignored) | Block size handling |
 | `-V` | (ls2eza only) | Show version |
 
