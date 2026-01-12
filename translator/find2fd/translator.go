@@ -17,7 +17,6 @@ type Translator struct{}
 func (t *Translator) Name() string       { return "find2fd" }
 func (t *Translator) SourceTool() string { return "find" }
 func (t *Translator) TargetTool() string { return "fd" }
-func (t *Translator) EnvVarName() string { return "FIND2FD_MODE" }
 
 // Translate converts find arguments to fd arguments
 func (t *Translator) Translate(args []string) []string {

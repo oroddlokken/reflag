@@ -18,7 +18,6 @@ type Translator struct{}
 func (t *Translator) Name() string       { return "ls2eza" }
 func (t *Translator) SourceTool() string { return "ls" }
 func (t *Translator) TargetTool() string { return "eza" }
-func (t *Translator) EnvVarName() string { return "LS2EZA_MODE" }
 
 // Translate converts ls arguments to eza arguments
 func (t *Translator) Translate(args []string) []string {
@@ -34,9 +33,9 @@ const (
 	ModeGNU
 )
 
-// getLSMode returns the ls compatibility mode based on OS or environment override
+// getLSMode returns the ls compatibility mode based on env var or OS detection
 func getLSMode() LSMode {
-	if mode := os.Getenv("LS2EZA_MODE"); mode != "" {
+	if mode := os.Getenv("REFLAG_LS2EZA_MODE"); mode != "" {
 		switch strings.ToLower(mode) {
 		case "bsd":
 			return ModeBSD
@@ -45,6 +44,7 @@ func getLSMode() LSMode {
 		}
 	}
 
+	// Auto-detect based on OS
 	switch runtime.GOOS {
 	case "darwin", "freebsd", "openbsd", "netbsd", "dragonfly":
 		return ModeBSD

@@ -264,7 +264,4 @@ func TestTranslatorInterface(t *testing.T) {
 	if tr.TargetTool() != "rg" {
 		t.Errorf("TargetTool() = %q, want %q", tr.TargetTool(), "rg")
 	}
-	if tr.EnvVarName() != "GREP2RG_MODE" {
-		t.Errorf("EnvVarName() = %q, want %q", tr.EnvVarName(), "GREP2RG_MODE")
-	}
 }

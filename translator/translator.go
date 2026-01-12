@@ -1,5 +1,7 @@
 package translator
 
+import "strings"
+
 // Translator defines the interface for converting flags between tools
 type Translator interface {
 	// Name returns the translator identifier (e.g., "ls2eza")
@@ -13,8 +15,10 @@ type Translator interface {
 
 	// Translate converts source tool arguments to target tool arguments
 	Translate(args []string) []string
+}
 
-	// EnvVarName returns the environment variable name for mode override (e.g., "LS2EZA_MODE")
-	// Returns empty string if no mode override is supported
-	EnvVarName() string
+// EnvVarName returns the environment variable name for mode override
+// Format: REFLAG_<NAME>_MODE (e.g., REFLAG_LS2EZA_MODE)
+func EnvVarName(t Translator) string {
+	return "REFLAG_" + strings.ToUpper(t.Name()) + "_MODE"
 }

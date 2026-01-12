@@ -119,11 +119,11 @@ reflag supports both BSD ls (macOS, FreeBSD) and GNU ls (Linux) flag conventions
 - **macOS, FreeBSD, OpenBSD, NetBSD, DragonFly** -> BSD mode
 - **Linux, Windows, others** -> GNU mode
 
-Override with the `LS2EZA_MODE` environment variable:
+Override with the `REFLAG_LS2EZA_MODE` environment variable:
 
 ```bash
-export LS2EZA_MODE=bsd   # Force BSD mode
-export LS2EZA_MODE=gnu   # Force GNU mode
+export REFLAG_LS2EZA_MODE=bsd   # Force BSD mode
+export REFLAG_LS2EZA_MODE=gnu   # Force GNU mode
 ```
 
 ### Supported Flags

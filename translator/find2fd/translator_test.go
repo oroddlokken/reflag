@@ -290,7 +290,4 @@ func TestTranslatorInterface(t *testing.T) {
 	if tr.TargetTool() != "fd" {
 		t.Errorf("TargetTool() = %q, want %q", tr.TargetTool(), "fd")
 	}
-	if tr.EnvVarName() != "FIND2FD_MODE" {
-		t.Errorf("EnvVarName() = %q, want %q", tr.EnvVarName(), "FIND2FD_MODE")
-	}
 }

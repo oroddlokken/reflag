@@ -440,10 +440,10 @@ func TestVersionFlag(t *testing.T) {
 	}
 }
 
-func TestGetLSModeEnvOverride(t *testing.T) {
+func TestGetLSModeEnvVar(t *testing.T) {
 	tests := []struct {
 		name     string
-		envValue string
+		envVal   string
 		expected LSMode
 	}{
 		{"bsd lowercase", "bsd", ModeBSD},
@@ -456,10 +456,10 @@ func TestGetLSModeEnvOverride(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("LS2EZA_MODE", tt.envValue)
+			t.Setenv("REFLAG_LS2EZA_MODE", tt.envVal)
 			result := getLSMode()
 			if result != tt.expected {
-				t.Errorf("getLSMode() with LS2EZA_MODE=%q = %v, want %v", tt.envValue, result, tt.expected)
+				t.Errorf("getLSMode() with REFLAG_LS2EZA_MODE=%q = %v, want %v", tt.envVal, result, tt.expected)
 			}
 		})
 	}
@@ -476,9 +476,6 @@ func TestTranslatorInterface(t *testing.T) {
 	}
 	if tr.TargetTool() != "eza" {
 		t.Errorf("TargetTool() = %q, want %q", tr.TargetTool(), "eza")
-	}
-	if tr.EnvVarName() != "LS2EZA_MODE" {
-		t.Errorf("EnvVarName() = %q, want %q", tr.EnvVarName(), "LS2EZA_MODE")
 	}
 
 	// Test translation via interface

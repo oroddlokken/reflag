@@ -16,7 +16,6 @@ type Translator struct{}
 func (t *Translator) Name() string       { return "grep2rg" }
 func (t *Translator) SourceTool() string { return "grep" }
 func (t *Translator) TargetTool() string { return "rg" }
-func (t *Translator) EnvVarName() string { return "GREP2RG_MODE" }
 
 // Translate converts grep arguments to ripgrep arguments
 func (t *Translator) Translate(args []string) []string {

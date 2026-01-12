@@ -74,6 +74,9 @@ func printUsage() {
 	fmt.Println("  reflag --init [bash|zsh|fish]")
 	fmt.Println("  reflag --version")
 	fmt.Println()
+	fmt.Println("Environment variables:")
+	fmt.Println("  REFLAG_LS2EZA_MODE    Force ls dialect: bsd or gnu")
+	fmt.Println()
 	fmt.Println("Symlink mode:")
 	fmt.Println("  Create a symlink named <source>2<target> pointing to reflag")
 	fmt.Println("  Example: ln -s reflag ls2eza")
@@ -106,12 +109,12 @@ func runTranslator(t translator.Translator, args []string) {
 		}
 	}
 
-	ezaArgs := t.Translate(args)
+	translatedArgs := t.Translate(args)
 
 	// Build and print the command
-	parts := make([]string, len(ezaArgs)+1)
+	parts := make([]string, len(translatedArgs)+1)
 	parts[0] = t.TargetTool()
-	for i, arg := range ezaArgs {
+	for i, arg := range translatedArgs {
 		parts[i+1] = shellQuote(arg)
 	}
 	fmt.Println(strings.Join(parts, " "))
