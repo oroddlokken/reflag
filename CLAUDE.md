@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ls2eza is a Go CLI tool that translates `ls` command-line flags to their `eza` equivalents. It outputs the translated eza command (does not execute it).
+reflag is a Go CLI tool that translates command-line flags between different tools. It currently supports translating `ls` flags to `eza` equivalents, with an extensible architecture for adding more translators.
 
 ## Build and Test Commands
 
@@ -13,7 +13,7 @@ make build               # Build with version info
 make test                # Run all tests
 make clean               # Remove binary
 make build-all           # Cross-compile for all platforms
-go run main.go -la       # Run directly without building
+go run . ls eza -la      # Run directly without building
 go test -run TestName    # Run specific test
 ```
 
@@ -28,20 +28,59 @@ git push origin v1.0.0
 
 ## Architecture
 
-Single-file Go application (`main.go`) with these components:
+### Package Structure
+
+```
+reflag/
+├── main.go                       # CLI entry point, symlink detection
+├── translator/
+│   ├── translator.go             # Translator interface
+│   ├── registry.go               # Global translator registry
+│   └── ls2eza/
+│       ├── translator.go         # ls→eza implementation
+│       └── translator_test.go    # ls2eza tests
+└── main_test.go                  # CLI tests
+```
+
+### Core Components
+
+1. **Translator Interface** (`translator/translator.go`):
+   - `Name()` - translator identifier (e.g., "ls2eza")
+   - `SourceTool()` - source tool name (e.g., "ls")
+   - `TargetTool()` - target tool name (e.g., "eza")
+   - `Translate(args)` - converts source args to target args
+   - `EnvVarName()` - environment variable for mode override
+
+2. **Registry** (`translator/registry.go`):
+   - `Register(t)` - register a translator
+   - `Get(source, target)` - lookup by source/target
+   - `GetByName(name)` - lookup by name (for symlink detection)
+   - `List()` - list all registered translators
+
+3. **CLI** (`main.go`):
+   - Symlink detection: parses binary name for `<source>2<target>` pattern
+   - Explicit mode: `reflag <source> <target> [flags...]`
+   - Built-in flags: `--list`, `--version`, `--help`
+
+### ls2eza Translator
+
+Located in `translator/ls2eza/`:
 
 1. **Mode detection** - `getLSMode()` determines BSD vs GNU ls compatibility:
    - Auto-detects based on OS (darwin/freebsd → BSD, linux/others → GNU)
    - Override with `LS2EZA_MODE=bsd` or `LS2EZA_MODE=gnu`
-2. **Flag mappings** - Static maps defining ls→eza translations:
-   - `reverseNeeded` - Flags that need sort order correction (`t`, `S`, `c`, `u`, `U`)
-   - `flagMap` - Short flag translations (30+ flags)
-   - `longFlagMap` - Long option translations (`--all`, `--recursive`, etc.)
-   - `longFlagPrefixes` - Long options with =value that need prefix matching
-3. **`translateFlags(mode)`** - Core logic that parses arguments, applies mode-specific mappings, handles reverse-sort semantics, and deduplicates flags
-4. **`main()`** - Entry point that outputs the shell-quoted eza command
 
-### BSD vs GNU conflicts
+2. **Flag mappings**:
+   - `reverseNeeded` - flags that need sort order correction (`t`, `S`, `c`, `u`, `U`)
+   - `flagMap` - short flag translations (30+ flags)
+   - `longFlagMap` - long option translations
+   - `longFlagPrefixes` - long options with =value
+
+3. **Reverse sort handling** - XOR logic to match ls sort order:
+   - `ls -lt` needs `--reverse` (ls shows newest first, eza shows oldest first)
+   - `ls -ltr` does NOT need `--reverse` (user explicitly wants oldest first)
+
+### BSD vs GNU Conflicts
 
 These flags have different meanings between BSD and GNU ls:
 - `-T`: BSD=full time display, GNU=tab size (ignored)
@@ -50,9 +89,9 @@ These flags have different meanings between BSD and GNU ls:
 - `-w`: BSD=raw non-printable (ignored), GNU=output width
 - `-D`: BSD=date format, GNU=dired mode (ignored)
 
-### Key behavior: Reverse sort handling
+## Adding a New Translator
 
-ls and eza have opposite default sort orders for time (`-t`, `-c`, `-u`, `-U`) and size (`-S`). The tool uses XOR logic to determine when to add `--reverse`:
-- `ls -lt` needs `--reverse` (ls shows newest first, eza shows oldest first)
-- `ls -ltr` does NOT need `--reverse` (user explicitly wants oldest first)
-- Same logic applies to `-c` (changed), `-u` (accessed), `-U` (created), `-S` (size)
+1. Create package `translator/<name>/`
+2. Implement `translator.Translator` interface
+3. Call `translator.Register()` in `init()`
+4. Import in `main.go` with blank identifier: `_ "github.com/kluzzebass/reflag/translator/<name>"`

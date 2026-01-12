@@ -9,10 +9,10 @@ LDFLAGS = -ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X
 all: build
 
 build:
-	go build $(LDFLAGS) -o ls2eza
+	go build $(LDFLAGS) -o reflag
 
 clean:
-	rm -f ls2eza
+	rm -f reflag
 
 test:
 	go test -v ./...
@@ -26,16 +26,16 @@ build-all: build-linux build-darwin build-windows
 
 build-linux:
 	# glibc builds
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/ls2eza-x86_64-unknown-linux-gnu
-	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/ls2eza-aarch64-unknown-linux-gnu
-	GOOS=linux GOARCH=arm GOARM=6 go build $(LDFLAGS) -o dist/ls2eza-arm-unknown-linux-gnueabihf
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/reflag-x86_64-unknown-linux-gnu
+	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/reflag-aarch64-unknown-linux-gnu
+	GOOS=linux GOARCH=arm GOARM=6 go build $(LDFLAGS) -o dist/reflag-arm-unknown-linux-gnueabihf
 	# musl builds (static)
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/ls2eza-x86_64-unknown-linux-musl
-	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/ls2eza-aarch64-unknown-linux-musl
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/reflag-x86_64-unknown-linux-musl
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/reflag-aarch64-unknown-linux-musl
 
 build-darwin:
-	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o dist/ls2eza-x86_64-apple-darwin
-	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o dist/ls2eza-aarch64-apple-darwin
+	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o dist/reflag-x86_64-apple-darwin
+	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o dist/reflag-aarch64-apple-darwin
 
 build-windows:
-	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o dist/ls2eza-x86_64-pc-windows-gnu.exe
+	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o dist/reflag-x86_64-pc-windows-gnu.exe

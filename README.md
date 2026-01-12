@@ -1,90 +1,102 @@
-# ls2eza
+# reflag
 
-A simple tool that translates `ls` command flags to their [eza](https://github.com/eza-community/eza) equivalents.
+A tool that translates command-line flags between different CLI tools. Currently supports translating `ls` flags to their [eza](https://github.com/eza-community/eza) equivalents.
 
 ## Installation
 
 ### From releases
 
-Download the latest binary from the [releases page](https://github.com/kluzzebass/ls2eza/releases).
+Download the latest binary from the [releases page](https://github.com/kluzzebass/reflag/releases).
 
 ### Using Go
 
 ```bash
-go install github.com/kluzzebass/ls2eza@latest
+go install github.com/kluzzebass/reflag@latest
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/kluzzebass/ls2eza.git
-cd ls2eza
+git clone https://github.com/kluzzebass/reflag.git
+cd reflag
 make build
 ```
 
 ## Usage
 
-ls2eza takes ls-style arguments and outputs the equivalent eza command:
+### Explicit Mode
+
+Specify the source and target tools explicitly:
 
 ```bash
-$ ls2eza -la
+$ reflag ls eza -la
 eza -l -a
 
-$ ls2eza -ltr
+$ reflag ls eza -ltr
 eza -l --sort=modified
 
-$ ls2eza -lSh /tmp
+$ reflag ls eza -lSh /tmp
 eza -l --sort=size --reverse /tmp
 ```
 
-### Using with an alias
+### Symlink Mode
 
-You can create a shell alias to automatically translate and execute:
+Create a symlink named `<source>2<target>` pointing to reflag:
 
 ```bash
-alias ls='eval $(ls2eza "$@")'
+ln -s $(which reflag) ~/bin/ls2eza
+ls2eza -la  # outputs: eza -l -a
 ```
 
-Or for fish shell:
+### Shell Integration
+
+You can create a shell function to automatically translate and execute:
+
+```bash
+# bash/zsh
+ls() { eval $(reflag ls eza "$@"); }
+
+# Or using symlink mode
+ln -s $(which reflag) ~/bin/ls2eza
+ls() { eval $(ls2eza "$@"); }
+```
+
+For fish shell:
 
 ```fish
 function ls
-    eval (ls2eza $argv)
+    eval (reflag ls eza $argv)
 end
 ```
 
-## BSD vs GNU ls Compatibility
-
-ls2eza supports both BSD ls (macOS, FreeBSD) and GNU ls (Linux) flag conventions. By default, it auto-detects based on your operating system:
-
-- **macOS, FreeBSD, OpenBSD, NetBSD, DragonFly** → BSD mode
-- **Linux, Windows, others** → GNU mode
-
-You can override the detection with the `LS2EZA_MODE` environment variable:
+### List Available Translators
 
 ```bash
-# Force BSD mode
-export LS2EZA_MODE=bsd
-
-# Force GNU mode
-export LS2EZA_MODE=gnu
+$ reflag --list
+ls2eza: ls -> eza
 ```
 
-### Conflicting Flags
+## ls2eza Translator
 
-Some flags have different meanings between BSD and GNU ls:
+The ls2eza translator converts `ls` flags to `eza` equivalents.
 
-| Flag | BSD ls | GNU ls |
-|------|--------|--------|
-| `-T` | Full timestamp display | Tab size (ignored) |
-| `-X` | Don't cross filesystems (ignored) | Sort by extension |
-| `-I` | Prevent auto -A for superuser (ignored) | Ignore pattern (`-I PATTERN`) |
-| `-w` | Raw non-printable chars (ignored) | Output width (`-w COLS`) |
-| `-D` | Date format (`-D FORMAT`) | Dired mode (ignored) |
+### BSD vs GNU ls Compatibility
 
-## Supported Flags
+reflag supports both BSD ls (macOS, FreeBSD) and GNU ls (Linux) flag conventions. By default, it auto-detects based on your operating system:
 
-### Display Format
+- **macOS, FreeBSD, OpenBSD, NetBSD, DragonFly** -> BSD mode
+- **Linux, Windows, others** -> GNU mode
+
+Override with the `LS2EZA_MODE` environment variable:
+
+```bash
+export LS2EZA_MODE=bsd   # Force BSD mode
+export LS2EZA_MODE=gnu   # Force GNU mode
+```
+
+### Supported Flags
+
+#### Display Format
 
 | ls flag | eza equivalent | Description |
 |---------|----------------|-------------|
@@ -94,7 +106,7 @@ Some flags have different meanings between BSD and GNU ls:
 | `-x` | `--across` | Sort grid across |
 | `-m` | `--oneline` | Stream output |
 
-### Show/Hide Entries
+#### Show/Hide Entries
 
 | ls flag | eza equivalent | Description |
 |---------|----------------|-------------|
@@ -103,7 +115,7 @@ Some flags have different meanings between BSD and GNU ls:
 | `-d` | `-d` | List directories themselves |
 | `-R` | `--recurse` | Recurse into directories |
 
-### Sorting
+#### Sorting
 
 | ls flag | eza equivalent | Description |
 |---------|----------------|-------------|
@@ -116,7 +128,7 @@ Some flags have different meanings between BSD and GNU ls:
 | `-v` | `--sort=name` | Version/name sort |
 | `-r` | `--reverse` | Reverse sort order |
 
-### Long Format Options
+#### Long Format Options
 
 | ls flag | eza equivalent | Description |
 |---------|----------------|-------------|
@@ -129,76 +141,33 @@ Some flags have different meanings between BSD and GNU ls:
 | `-@` | `--extended` | Show extended attributes |
 | `-h` | (default) | Human-readable sizes |
 
-### Indicators
-
-| ls flag | eza equivalent | Description |
-|---------|----------------|-------------|
-| `-F` | `-F` | Append type indicators |
-| `-p` | `--classify` | Append / to directories |
-
-### Symlinks
-
-| ls flag | eza equivalent | Description |
-|---------|----------------|-------------|
-| `-L` | `-X` | Dereference symlinks |
-| `-H` | `-X` | Follow symlinks on command line |
-
-### BSD-Specific Flags
-
-| ls flag | eza equivalent | Description |
-|---------|----------------|-------------|
-| `-T` | `--time-style=full-iso` | Full timestamp display |
-| `-D FORMAT` | `--time-style=+FORMAT` | Custom date format (strftime) |
-| `-G` | (default) | Color output |
-| `-I` | (ignored) | Prevent auto -A for superuser |
-| `-W` | (ignored) | Display whiteouts |
-| `-X` | (ignored) | Don't cross filesystems |
-| `-w` | (ignored) | Raw non-printable characters |
-
-### GNU-Specific Flags
-
-| ls flag | eza equivalent | Description |
-|---------|----------------|-------------|
-| `-X` | `--sort=extension` | Sort by file extension |
-| `-I PATTERN` | `--ignore-glob=PATTERN` | Ignore files matching pattern |
-| `-w COLS` | `--width=COLS` | Set output width |
-| `-Z` | `-Z` | SELinux security context |
-| `-N` | `--no-quotes` | Print names without quoting |
-| `--group-directories-first` | `--group-directories-first` | List directories first |
-| `--full-time` | `-l --time-style=full-iso` | Long format with full time |
-| `--ignore=PATTERN` | `--ignore-glob=PATTERN` | Ignore files matching pattern |
-| `--hyperlink` | `--hyperlink` | Hyperlink file names |
-
-### Other
-
-| ls flag | eza equivalent | Description |
-|---------|----------------|-------------|
-| `-k` | (ignored) | Block size handling |
-| `-V` | (ls2eza only) | Show version |
-
-### Long Options
-
-| ls option | eza equivalent |
-|-----------|----------------|
-| `--all` | `-a` |
-| `--almost-all` | `-A` |
-| `--directory` | `-d` |
-| `--recursive` | `--recurse` |
-| `--human-readable` | (default) |
-| `--inode` | `--inode` |
-| `--numeric-uid-gid` | `--numeric` |
-| `--classify` | `-F` |
-| `--dereference` | `-X` |
-| `--color=WHEN` | `--color=WHEN` |
-
 ### Sort Order Handling
 
-ls and eza have opposite default sort orders for time and size sorting. ls2eza automatically adds `--reverse` when needed so that the output matches ls behavior:
+ls and eza have opposite default sort orders for time and size sorting. reflag automatically adds `--reverse` when needed so that the output matches ls behavior:
 
-- `ls -lt` shows newest first → `eza --sort=modified --reverse`
-- `ls -ltr` shows oldest first → `eza --sort=modified` (no reverse needed)
-- `ls -lS` shows largest first → `eza --sort=size --reverse`
-- `ls -lc` shows newest changed first → `eza --sort=changed --reverse`
+- `ls -lt` shows newest first -> `eza --sort=modified --reverse`
+- `ls -ltr` shows oldest first -> `eza --sort=modified` (no reverse needed)
+- `ls -lS` shows largest first -> `eza --sort=size --reverse`
+
+### Conflicting Flags (BSD vs GNU)
+
+| Flag | BSD ls | GNU ls |
+|------|--------|--------|
+| `-T` | Full timestamp display | Tab size (ignored) |
+| `-X` | Don't cross filesystems (ignored) | Sort by extension |
+| `-I` | Prevent auto -A (ignored) | Ignore pattern (`-I PATTERN`) |
+| `-w` | Raw non-printable chars (ignored) | Output width (`-w COLS`) |
+| `-D` | Date format (`-D FORMAT`) | Dired mode (ignored) |
+
+## Adding New Translators
+
+reflag is designed to be extensible. To add a new translator:
+
+1. Create a new package under `translator/`
+2. Implement the `translator.Translator` interface
+3. Register it in `init()` using `translator.Register()`
+
+See `translator/ls2eza/` for an example implementation.
 
 ## License
 
