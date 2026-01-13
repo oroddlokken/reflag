@@ -57,16 +57,45 @@ jobs:
 
           cd homebrew-tap
 
-          # Update version
-          sed -i "s/version \".*\"/version \"$VERSION_NUM\"/" reflag.rb
+          # Create updated formula
+          cat > reflag.rb << 'EOF'
+class Reflag < Formula
+  desc "Translate command-line flags between different CLI tools"
+  homepage "https://github.com/kluzzebass/reflag"
+  version "VERSION_NUM"
+  license "MIT"
 
-          # Update Intel URL and SHA256
-          sed -i "0,/url \".*\"/s||url \"https://github.com/kluzzebass/reflag/releases/download/${VERSION}/reflag-x86_64-apple-darwin\"|" reflag.rb
-          sed -i "0,/sha256 \".*\"/s||sha256 \"$SHA256_X86\"|" reflag.rb
+  on_macos do
+    on_intel do
+      url "https://github.com/kluzzebass/reflag/releases/download/VERSION/reflag-x86_64-apple-darwin"
+      sha256 "SHA256_X86"
+    end
 
-          # Update ARM URL and SHA256
-          sed -i "0,/url \".*\"/s||url \"https://github.com/kluzzebass/reflag/releases/download/${VERSION}/reflag-aarch64-apple-darwin\"|" reflag.rb
-          sed -i "0,/sha256 \".*\"/s||sha256 \"$SHA256_ARM\"|" reflag.rb
+    on_arm do
+      url "https://github.com/kluzzebass/reflag/releases/download/VERSION/reflag-aarch64-apple-darwin"
+      sha256 "SHA256_ARM"
+    end
+  end
+
+  def install
+    bin.install Dir["reflag-*"].first => "reflag"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/reflag --version")
+
+    # Test basic translation
+    output = shell_output("#{bin}/reflag ls eza -la")
+    assert_match "eza", output
+  end
+end
+EOF
+
+          # Replace placeholders
+          sed -i "s/VERSION_NUM/$VERSION_NUM/g" reflag.rb
+          sed -i "s|VERSION|$VERSION|g" reflag.rb
+          sed -i "s/SHA256_X86/$SHA256_X86/" reflag.rb
+          sed -i "s/SHA256_ARM/$SHA256_ARM/" reflag.rb
 
       - name: Commit and push
         run: |
