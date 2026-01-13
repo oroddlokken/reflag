@@ -23,7 +23,13 @@ reflag bridges this gap. Instead of retraining years of muscle memory or giving 
 
 Choose one of the following:
 
-**From releases** (recommended):
+**Using Homebrew** (macOS):
+```bash
+brew tap kluzzebass/tap
+brew install reflag
+```
+
+**From releases**:
 ```bash
 # Download from https://github.com/kluzzebass/reflag/releases
 # Make executable and move to your PATH
@@ -113,6 +119,13 @@ Flag translation is inherently imperfect. Here's what you should know:
 **Shell scripts are generally unaffected.** Scripts using `#!/bin/bash` run in non-interactive mode and don't source `~/.bashrc` or `~/.zshrc`, so they won't see the reflag functions. If you do encounter issues, you can bypass the functions with `command ls` or `/bin/ls`, or exclude specific translators from your init: `eval "$(reflag --init bash ls2eza grep2rg)"`.
 
 ## Installation
+
+### Using Homebrew (macOS)
+
+```bash
+brew tap kluzzebass/tap
+brew install reflag
+```
 
 ### From releases
 
