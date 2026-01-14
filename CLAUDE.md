@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-reflag is a Go CLI tool that translates command-line flags between different tools. It currently supports translating `ls` flags to `eza` equivalents, with an extensible architecture for adding more translators.
+reflag is a Go CLI tool that translates command-line flags between traditional UNIX tools and their modern replacements. It supports 7 translators covering common tools like ls, find, grep, du, ps, dig, and less.
 
 ## Build and Test Commands
 
@@ -32,14 +32,19 @@ git push origin v1.0.0
 
 ```
 reflag/
-├── main.go                       # CLI entry point, symlink detection
+├── main.go                       # CLI entry point, shell integration
+├── main_test.go                  # CLI tests
 ├── translator/
 │   ├── translator.go             # Translator interface
 │   ├── registry.go               # Global translator registry
-│   └── ls2eza/
-│       ├── translator.go         # ls→eza implementation
-│       └── translator_test.go    # ls2eza tests
-└── main_test.go                  # CLI tests
+│   ├── translator_test.go        # Registry tests
+│   ├── ls2eza/                   # ls → eza (BSD/GNU modes)
+│   ├── find2fd/                  # find → fd (glob→regex conversion)
+│   ├── grep2rg/                  # grep → ripgrep
+│   ├── du2dust/                  # du → dust
+│   ├── ps2procs/                 # ps → procs
+│   ├── dig2doggo/                # dig → doggo (optional)
+│   └── less2moor/                # less → moor (optional)
 ```
 
 ### Core Components
@@ -48,19 +53,33 @@ reflag/
    - `Name()` - translator identifier (e.g., "ls2eza")
    - `SourceTool()` - source tool name (e.g., "ls")
    - `TargetTool()` - target tool name (e.g., "eza")
-   - `Translate(args)` - converts source args to target args
-   - `Optional()` - returns true if excluded from `--init` by default
+   - `Translate(args, mode)` - converts source args to target args
+   - `IncludeInInit()` - returns true if included in `--init` by default
 
 2. **Registry** (`translator/registry.go`):
    - `Register(t)` - register a translator
    - `Get(source, target)` - lookup by source/target
-   - `GetByName(name)` - lookup by name (for symlink detection)
+   - `GetByName(name)` - lookup by name
    - `List()` - list all registered translators
+   - `MustGet()` - lookup with panic on failure
+   - `PrintTable()` - formatted output of all translators
 
 3. **CLI** (`main.go`):
-   - Symlink detection: parses binary name for `<source>2<target>` pattern
-   - Explicit mode: `reflag <source> <target> [flags...]`
-   - Built-in flags: `--list`, `--version`, `--help`
+   - Explicit mode: `reflag [--mode=MODE] <source> <target> [flags...]`
+   - Built-in flags: `--list`, `--version`, `--license`, `--help`
+   - Shell integration: `--init bash|zsh|fish [translator...]`
+
+### Available Translators
+
+| Translator | Source | Target | IncludeInInit | Notes |
+|------------|--------|--------|---------------|-------|
+| ls2eza | ls | eza | true | BSD/GNU mode detection |
+| find2fd | find | fd | true | Glob-to-regex conversion |
+| grep2rg | grep | ripgrep | true | Pattern handling |
+| du2dust | du | dust | true | Unit conversions |
+| ps2procs | ps | procs | true | BSD/GNU styles |
+| dig2doggo | dig | doggo | false | DNS query translation |
+| less2moor | less | moor | false | Pager flags |
 
 ### ls2eza Translator
 
@@ -69,6 +88,7 @@ Located in `translator/ls2eza/`:
 1. **Mode detection** - `getLSMode()` determines BSD vs GNU ls compatibility:
    - Auto-detects based on OS (darwin/freebsd → BSD, linux/others → GNU)
    - Override with `LS2EZA_MODE=bsd` or `LS2EZA_MODE=gnu`
+   - Or use `--mode=bsd` or `--mode=gnu` on command line
 
 2. **Flag mappings**:
    - `reverseNeeded` - flags that need sort order correction (`t`, `S`, `c`, `u`, `U`)
@@ -80,7 +100,7 @@ Located in `translator/ls2eza/`:
    - `ls -lt` needs `--reverse` (ls shows newest first, eza shows oldest first)
    - `ls -ltr` does NOT need `--reverse` (user explicitly wants oldest first)
 
-### BSD vs GNU Conflicts
+### BSD vs GNU Conflicts (ls2eza)
 
 These flags have different meanings between BSD and GNU ls:
 - `-T`: BSD=full time display, GNU=tab size (ignored)
@@ -89,25 +109,35 @@ These flags have different meanings between BSD and GNU ls:
 - `-w`: BSD=raw non-printable (ignored), GNU=output width
 - `-D`: BSD=date format, GNU=dired mode (ignored)
 
+### Other Translators
+
+- **find2fd**: Converts find expressions to fd syntax, including glob-to-regex pattern conversion
+- **grep2rg**: Translates grep flags to ripgrep, handles include/exclude patterns
+- **du2dust**: Converts du flags including unit/block size mappings
+- **ps2procs**: Handles both BSD-style (`ps aux`) and GNU-style (`ps -ef`) syntax
+- **dig2doggo**: Translates DNS query flags including +options syntax
+- **less2moor**: Converts pager flags for the moor Rust-based pager
+
 ## Adding a New Translator
 
 1. Create package `translator/<name>/`
 2. Implement `translator.Translator` interface
-   - Set `Optional()` to `true` if the translator should be excluded from `--init` by default
-   - Set `Optional()` to `false` for core/commonly-used translators
+   - Set `IncludeInInit()` to `true` for core/commonly-used translators
+   - Set `IncludeInInit()` to `false` for optional/experimental translators
 3. Call `translator.Register()` in `init()`
 4. Import in `main.go` with blank identifier: `_ "github.com/kluzzebass/reflag/translator/<name>"`
-5. Update `README.md` with new translator information and how to install the tool
+5. Add tests in `translator/<name>/translator_test.go`
+6. Update `README.md` with new translator information
 
 ### Optional Translators
 
-Translators marked as optional (returning `true` from `Optional()`) are excluded from `./reflag --init` by default. This is useful for:
+Translators returning `false` from `IncludeInInit()` are excluded from `./reflag --init` by default. This is useful for:
 - Experimental or less commonly used translators
 - Translators for niche tools
 - New translators that need more testing
 
 Optional translators can still be explicitly included:
 ```bash
-reflag --init bash dig2doggo  # Include only dig2doggo
-reflag --init zsh ls2eza dig2doggo  # Include specific translators
+reflag --init bash dig2doggo           # Include only dig2doggo
+reflag --init zsh ls2eza dig2doggo     # Include specific translators
 ```
