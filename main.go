@@ -68,40 +68,56 @@ SOFTWARE.`
 	fmt.Println(licenseText)
 }
 
-// parseInitArgs parses --init arguments, returning shell type and translator names
+// parseInitArgs parses --init arguments, returning shell type and add/remove lists
 // Shell can appear anywhere in args; defaults to "bash" if not specified
-func parseInitArgs(args []string) (shell string, filterNames []string) {
+// Arguments starting with + are added to defaults, - are removed from defaults
+func parseInitArgs(args []string) (shell string, add []string, remove []string) {
 	shell = "bash"
 	for _, arg := range args {
-		switch arg {
-		case "bash", "zsh", "fish":
+		switch {
+		case arg == "bash" || arg == "zsh" || arg == "fish":
 			shell = arg
-		default:
-			filterNames = append(filterNames, arg)
+		case strings.HasPrefix(arg, "+"):
+			add = append(add, strings.TrimPrefix(arg, "+"))
+		case strings.HasPrefix(arg, "-"):
+			remove = append(remove, strings.TrimPrefix(arg, "-"))
 		}
 	}
 	return
 }
 
-func printInit(shell string, filterNames []string) {
+func printInit(shell string, add []string, remove []string) {
+	// Start with default translators
+	nameSet := make(map[string]bool)
+	for _, name := range translator.List() {
+		t := translator.GetByName(name)
+		if t != nil && t.IncludeInInit() {
+			nameSet[name] = true
+		}
+	}
+
+	// Remove specified translators
+	for _, name := range remove {
+		if translator.GetByName(name) != nil {
+			delete(nameSet, name)
+		} else {
+			fmt.Fprintf(os.Stderr, "warning: unknown translator %q\n", name)
+		}
+	}
+
+	// Add specified translators
+	for _, name := range add {
+		if translator.GetByName(name) != nil {
+			nameSet[name] = true
+		} else {
+			fmt.Fprintf(os.Stderr, "warning: unknown translator %q\n", name)
+		}
+	}
+
+	// Convert to sorted slice
 	var names []string
-	if len(filterNames) > 0 {
-		// Use specified translators
-		for _, name := range filterNames {
-			if translator.GetByName(name) != nil {
-				names = append(names, name)
-			} else {
-				fmt.Fprintf(os.Stderr, "warning: unknown translator %q\n", name)
-			}
-		}
-	} else {
-		// Use all translators that should be included in init by default
-		for _, name := range translator.List() {
-			t := translator.GetByName(name)
-			if t != nil && t.IncludeInInit() {
-				names = append(names, name)
-			}
-		}
+	for name := range nameSet {
+		names = append(names, name)
 	}
 	sort.Strings(names)
 
@@ -142,13 +158,17 @@ func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  reflag [--mode=MODE] <source> <target> [flags...]")
 	fmt.Println("  reflag --list")
-	fmt.Println("  reflag --init [bash|zsh|fish] [translator...]")
+	fmt.Println("  reflag --init [bash|zsh|fish] [+translator...] [-translator...]")
 	fmt.Println("  reflag --version")
 	fmt.Println("  reflag --license")
 	fmt.Println()
 	fmt.Println("Options:")
 	fmt.Println("  --mode=MODE    Set dialect mode (e.g., bsd or gnu for ls2eza)")
 	fmt.Println("                 Auto-detects from OS if not specified")
+	fmt.Println()
+	fmt.Println("Init modifiers:")
+	fmt.Println("  +translator    Add translator to defaults (e.g., +dig2doggo)")
+	fmt.Println("  -translator    Remove translator from defaults (e.g., -ls2eza)")
 	fmt.Println()
 	fmt.Println("Available translators:")
 	translator.PrintTable(os.Stdout)
@@ -197,8 +217,8 @@ func main() {
 		printUsage()
 		return
 	case "--init":
-		shell, filterNames := parseInitArgs(args[1:])
-		printInit(shell, filterNames)
+		shell, add, remove := parseInitArgs(args[1:])
+		printInit(shell, add, remove)
 		return
 	}
 

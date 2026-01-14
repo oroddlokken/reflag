@@ -68,7 +68,7 @@ reflag/
 3. **CLI** (`main.go`):
    - Explicit mode: `reflag [--mode=MODE] <source> <target> [flags...]`
    - Built-in flags: `--list`, `--version`, `--license`, `--help`
-   - Shell integration: `--init bash|zsh|fish [translator...]`
+   - Shell integration: `--init bash|zsh|fish [+translator...] [-translator...]`
 
 ### Available Translators
 
@@ -139,8 +139,9 @@ Translators returning `false` from `IncludeInInit()` are excluded from `./reflag
 - Translators for niche tools
 - New translators that need more testing
 
-Optional translators can still be explicitly included:
+Use `+` and `-` prefixes to modify the default set:
 ```bash
-reflag --init bash dig2doggo           # Include only dig2doggo
-reflag --init zsh ls2eza dig2doggo     # Include specific translators
+reflag --init bash +dig2doggo          # Add dig2doggo to defaults
+reflag --init zsh -ls2eza              # Remove ls2eza from defaults
+reflag --init fish +dig2doggo -ps2procs  # Add and remove
 ```

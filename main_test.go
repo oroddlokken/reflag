@@ -37,69 +37,88 @@ func TestShellQuote(t *testing.T) {
 
 func TestParseInitArgs(t *testing.T) {
 	tests := []struct {
-		name            string
-		args            []string
-		expectedShell   string
-		expectedFilters []string
+		name           string
+		args           []string
+		expectedShell  string
+		expectedAdd    []string
+		expectedRemove []string
 	}{
 		{
-			name:            "no args defaults to bash",
-			args:            []string{},
-			expectedShell:   "bash",
-			expectedFilters: nil,
+			name:           "no args defaults to bash",
+			args:           []string{},
+			expectedShell:  "bash",
+			expectedAdd:    nil,
+			expectedRemove: nil,
 		},
 		{
-			name:            "shell only",
-			args:            []string{"fish"},
-			expectedShell:   "fish",
-			expectedFilters: nil,
+			name:           "shell only",
+			args:           []string{"fish"},
+			expectedShell:  "fish",
+			expectedAdd:    nil,
+			expectedRemove: nil,
 		},
 		{
-			name:            "shell first then translators",
-			args:            []string{"bash", "ls2eza", "grep2rg"},
-			expectedShell:   "bash",
-			expectedFilters: []string{"ls2eza", "grep2rg"},
+			name:           "add translator",
+			args:           []string{"bash", "+dig2doggo"},
+			expectedShell:  "bash",
+			expectedAdd:    []string{"dig2doggo"},
+			expectedRemove: nil,
 		},
 		{
-			name:            "translators first then shell",
-			args:            []string{"ls2eza", "bash", "grep2rg"},
-			expectedShell:   "bash",
-			expectedFilters: []string{"ls2eza", "grep2rg"},
+			name:           "remove translator",
+			args:           []string{"zsh", "-ls2eza"},
+			expectedShell:  "zsh",
+			expectedAdd:    nil,
+			expectedRemove: []string{"ls2eza"},
 		},
 		{
-			name:            "shell at end",
-			args:            []string{"ls2eza", "grep2rg", "fish"},
-			expectedShell:   "fish",
-			expectedFilters: []string{"ls2eza", "grep2rg"},
+			name:           "add and remove",
+			args:           []string{"fish", "+dig2doggo", "-ls2eza"},
+			expectedShell:  "fish",
+			expectedAdd:    []string{"dig2doggo"},
+			expectedRemove: []string{"ls2eza"},
 		},
 		{
-			name:            "translators only defaults to bash",
-			args:            []string{"ls2eza"},
-			expectedShell:   "bash",
-			expectedFilters: []string{"ls2eza"},
+			name:           "multiple adds",
+			args:           []string{"+dig2doggo", "+more2moor"},
+			expectedShell:  "bash",
+			expectedAdd:    []string{"dig2doggo", "more2moor"},
+			expectedRemove: nil,
 		},
 		{
-			name:            "zsh shell",
-			args:            []string{"zsh", "find2fd"},
-			expectedShell:   "zsh",
-			expectedFilters: []string{"find2fd"},
+			name:           "multiple removes",
+			args:           []string{"zsh", "-ls2eza", "-grep2rg"},
+			expectedShell:  "zsh",
+			expectedAdd:    nil,
+			expectedRemove: []string{"ls2eza", "grep2rg"},
 		},
 		{
-			name:            "multiple shells takes last",
-			args:            []string{"bash", "fish", "zsh"},
-			expectedShell:   "zsh",
-			expectedFilters: nil,
+			name:           "shell at end",
+			args:           []string{"+dig2doggo", "-ls2eza", "fish"},
+			expectedShell:  "fish",
+			expectedAdd:    []string{"dig2doggo"},
+			expectedRemove: []string{"ls2eza"},
+		},
+		{
+			name:           "multiple shells takes last",
+			args:           []string{"bash", "fish", "zsh"},
+			expectedShell:  "zsh",
+			expectedAdd:    nil,
+			expectedRemove: nil,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			shell, filters := parseInitArgs(tt.args)
+			shell, add, remove := parseInitArgs(tt.args)
 			if shell != tt.expectedShell {
 				t.Errorf("parseInitArgs(%v) shell = %q, want %q", tt.args, shell, tt.expectedShell)
 			}
-			if !slices.Equal(filters, tt.expectedFilters) {
-				t.Errorf("parseInitArgs(%v) filters = %v, want %v", tt.args, filters, tt.expectedFilters)
+			if !slices.Equal(add, tt.expectedAdd) {
+				t.Errorf("parseInitArgs(%v) add = %v, want %v", tt.args, add, tt.expectedAdd)
+			}
+			if !slices.Equal(remove, tt.expectedRemove) {
+				t.Errorf("parseInitArgs(%v) remove = %v, want %v", tt.args, remove, tt.expectedRemove)
 			}
 		})
 	}
