@@ -26,7 +26,7 @@ reflag bridges this gap. Instead of retraining years of muscle memory or giving 
 
 Choose one of the following:
 
-**Using Homebrew** (macOS):
+**Using Homebrew** (macOS / Linux):
 ```bash
 brew tap kluzzebass/tap
 brew install reflag
@@ -127,7 +127,7 @@ Flag translation is inherently imperfect. Here's what you should know:
 
 ## Installation
 
-### Using Homebrew (macOS)
+### Using Homebrew (macOS / Linux)
 
 ```bash
 brew tap kluzzebass/tap
