@@ -126,9 +126,9 @@ func translateFlags(args []string) []string {
 
 		if strings.HasPrefix(arg, "--") {
 			// Handle --option=value format
-			if idx := strings.Index(arg, "="); idx != -1 {
-				opt := arg[:idx]
-				val := arg[idx+1:]
+			if before, after, ok := strings.Cut(arg, "="); ok {
+				opt := before
+				val := after
 
 				switch opt {
 				case "--include":

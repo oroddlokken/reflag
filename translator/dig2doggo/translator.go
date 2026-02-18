@@ -29,7 +29,7 @@ func translateFlags(args []string) []string {
 	var queryClass string
 	skipNext := false
 
-	for i := 0; i < len(args); i++ {
+	for i := range args {
 		if skipNext {
 			skipNext = false
 			continue

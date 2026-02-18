@@ -169,8 +169,8 @@ func translateFlags(args []string) []string {
 		if inOptions && strings.HasPrefix(arg, "--") {
 			handled := false
 			for _, prefix := range longFlagPrefixes {
-				if strings.HasPrefix(arg, prefix) {
-					value := strings.TrimPrefix(arg, prefix)
+				if after, ok := strings.CutPrefix(arg, prefix); ok {
+					value := after
 					handled = true
 
 					switch prefix {

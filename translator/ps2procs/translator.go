@@ -96,9 +96,9 @@ func translateFlags(args []string) []string {
 
 		// Handle GNU long options
 		if strings.HasPrefix(arg, "--") {
-			if idx := strings.Index(arg, "="); idx != -1 {
-				opt := arg[:idx]
-				val := arg[idx+1:]
+			if before, after, ok := strings.Cut(arg, "="); ok {
+				opt := before
+				val := after
 
 				switch opt {
 				case "--sort":

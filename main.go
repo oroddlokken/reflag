@@ -226,8 +226,8 @@ func main() {
 
 	// Parse --mode flag if present
 	mode := ""
-	if strings.HasPrefix(args[0], "--mode=") {
-		mode = strings.TrimPrefix(args[0], "--mode=")
+	if after, ok := strings.CutPrefix(args[0], "--mode="); ok {
+		mode = after
 		args = args[1:]
 	} else if args[0] == "--mode" && len(args) > 1 {
 		mode = args[1]
