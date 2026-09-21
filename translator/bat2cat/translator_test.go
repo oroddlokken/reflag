@@ -77,6 +77,12 @@ func TestTranslateFlags(t *testing.T) {
 			expected: []string{"-p", "--paging=never", "--color=auto", "--show-all", "--nonprintable-notation=caret", "file.txt"},
 		},
 
+		{
+			name:     "show non-printing long form",
+			input:    []string{"--show-nonprinting", "file.txt"},
+			expected: []string{"-p", "--paging=never", "--color=auto", "--show-all", "--nonprintable-notation=caret", "file.txt"},
+		},
+
 		// Combined flags
 		{
 			name:     "combined flags",

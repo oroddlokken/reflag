@@ -113,6 +113,9 @@ func handleLongFlag(arg string, args []string, i int, result *[]string, skipNext
 		*result = append(*result, "-A")
 	case "--unbuffered":
 		*result = append(*result, "-u")
+	case "--show-nonprinting":
+		// Long form of -v; see handleShortFlags for the approximation
+		*result = append(*result, "--show-all", "--nonprintable-notation=caret")
 	case "--plain", "--force-colorization", "--diff", "--list-themes", "--list-languages",
 		"--chop-long-lines", "--diagnostic", "--acknowledgements", "--set-terminal-title",
 		"--help", "--version":

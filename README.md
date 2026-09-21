@@ -336,6 +336,8 @@ The cat2bat translator converts `cat` commands to `bat` with flags that make bat
 | `--squeeze-blank` | `-s` | Squeeze multiple blank lines |
 | `-A` | `-A` | Show non-printable characters |
 | `--show-all` | `-A` | Show non-printable characters |
+| `-v` | `--show-all --nonprintable-notation=caret` | Show non-printing characters as `^X` / `M-x`; bat also marks tabs and spaces |
+| `--show-nonprinting` | `--show-all --nonprintable-notation=caret` | Same as `-v` |
 | `-u` | `-u` | Unbuffered output |
 | `--unbuffered` | `-u` | Unbuffered output |
 
